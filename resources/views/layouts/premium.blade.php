@@ -14,7 +14,7 @@
 <!-- NAVBAR -->
 <div class="navbar">
     <h2>
-        @if(Auth::check() && Auth::user()->role == 'mitra')
+        @if(Auth::check() && strtolower(trim(Auth::user()->role)) == 'mitra')
             RAYA STUDIO - MITRA
         @else
             RAYA
@@ -22,7 +22,7 @@
     </h2>
     <div class="menu">
         @auth
-            @if(Auth::user()->role == 'mitra')
+            @if(strtolower(trim(Auth::user()->role)) == 'mitra')
                 <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'active' : '' }}">Produk</a>
                 <a href="{{ route('dashboard.mitra') }}" class="{{ request()->routeIs('dashboard.mitra') ? 'active' : '' }}">Dashboard</a>
             @else
@@ -59,20 +59,22 @@
 </div>
 
 <!-- FOOTER -->
-<div class="footer" id="footer" style="margin-top: 80px; padding: 40px 0; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
-    <div class="footer-col">
-        <h3 style="font-family: var(--font-heading); font-weight: 700; margin-bottom: 15px; color: var(--text-primary);">Raya Creative Studio</h3>
-        <p style="color: var(--text-secondary); font-size: 14px;">Helper for your streaming needs</p>
-    </div>
+<div class="footer" id="footer" style="margin-top: 80px; padding: 40px 0; border-top: 1px solid var(--border-color);">
+    <div class="container" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
+        <div class="footer-col">
+            <h3 style="font-family: var(--font-heading); font-weight: 700; margin-bottom: 15px; color: var(--text-primary);">Raya Creative Studio</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;">Helper for your streaming needs</p>
+        </div>
 
-    <div class="footer-col">
-        <h4 style="font-family: var(--font-heading); font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Address</h4>
-        <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Jl. Kenangan No.123<br>Surabaya, Indonesia</p>
-    </div>
+        <div class="footer-col">
+            <h4 style="font-family: var(--font-heading); font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Address</h4>
+            <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Jl. Kenangan No.123<br>Surabaya, Indonesia</p>
+        </div>
 
-    <div class="footer-col">
-        <h4 style="font-family: var(--font-heading); font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Contact</h4>
-        <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Phone: 0812-3456-7890<br>Email: rayastudio@gmail.com</p>
+        <div class="footer-col">
+            <h4 style="font-family: var(--font-heading); font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Contact</h4>
+            <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Phone: 0812-3456-7890<br>Email: rayastudio@gmail.com</p>
+        </div>
     </div>
 </div>
 

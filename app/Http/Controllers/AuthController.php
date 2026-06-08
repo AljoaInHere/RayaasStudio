@@ -12,12 +12,12 @@ class AuthController extends Controller
     public function index()
     {
         if (Auth::check()) {
-            if (Auth::user()->role == 'mitra') {
+            if (strtolower(trim(Auth::user()->role)) == 'mitra') {
                 return redirect()->route('dashboard.mitra');
             }
             return redirect()->route('dashboard.customer');
         }
-        return redirect()->route('choose.role');
+        return view('auth.choose_role');
     }
 
     public function chooseRole()
@@ -37,15 +37,33 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
+        $user = \App\Models\User::where('email', $request->email)->first();
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            
-            if (Auth::user()->role == 'mitra') {
-                return redirect()->route('dashboard.mitra');
+        if ($user) {
+            $isCorrect = false;
+
+            // Check if password starts with $2y$ (bcrypt hash prefix)
+            if (str_starts_with($user->password, '$2y$')) {
+                $isCorrect = \Illuminate\Support\Facades\Hash::check($request->password, $user->password);
+            } else {
+                // Support legacy plain text password
+                if ($request->password === $user->password) {
+                    $isCorrect = true;
+                    // Automatically upgrade to Bcrypt hash for future security
+                    $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+                    $user->save();
+                }
             }
-            return redirect()->route('dashboard.customer');
+
+            if ($isCorrect) {
+                Auth::login($user);
+                $request->session()->regenerate();
+
+                if (strtolower(trim($user->role)) == 'mitra') {
+                    return redirect()->route('dashboard.mitra');
+                }
+                return redirect()->route('dashboard.customer');
+            }
         }
 
         return back()->withErrors(['email' => 'Email atau password salah.']);

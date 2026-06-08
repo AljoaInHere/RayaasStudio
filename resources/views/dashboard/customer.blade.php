@@ -62,6 +62,7 @@
 
         /* Filter chips */
         .filter-container {
+            position: relative;
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
@@ -183,6 +184,12 @@
 @endsection
 
 @section('content')
+    @if(session('success') || request('success'))
+        <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
+            🎉 {{ session('success') ?? request('success') }}
+        </div>
+    @endif
+
     <!-- STATS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 my-10 stats-container">
         <div class="flex flex-col items-center justify-center py-[25px] px-5 text-center text-[28px] font-bold font-heading text-text-primary relative overflow-hidden glass-card stat-item" style="animation-delay: 0.05s;">
@@ -194,7 +201,7 @@
             <span class="font-sans text-[13px] font-medium text-text-secondary mt-1 uppercase tracking-[1px] label">Years</span>
         </div>
         <div class="flex flex-col items-center justify-center py-[25px] px-5 text-center text-[28px] font-bold font-heading text-text-primary relative overflow-hidden glass-card stat-item" style="animation-delay: 0.15s;">
-            {{ $products->count() }}
+            {{ $products->total() }}
             <span class="font-sans text-[13px] font-medium text-text-secondary mt-1 uppercase tracking-[1px] label">Products</span>
         </div>
         <div class="flex flex-col items-center justify-center py-[25px] px-5 text-center text-[28px] font-bold font-heading text-text-primary relative overflow-hidden glass-card stat-item" style="animation-delay: 0.2s;">
@@ -275,6 +282,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function initSlidingPill(containerSelector, itemSelector) {
         const containers = document.querySelectorAll(containerSelector);
         containers.forEach(container => {
+            const computedStyle = window.getComputedStyle(container);
+            if (computedStyle.position === 'static') {
+                container.style.position = 'relative';
+            }
+
             let pill = container.querySelector('.sliding-pill-indicator');
             if (!pill) {
                 pill = document.createElement('div');

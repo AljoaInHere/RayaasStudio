@@ -306,10 +306,15 @@ tr:hover td {
     color: #fbbf24;
     border: 1px solid rgba(245, 158, 11, 0.25);
 }
-.status-paid, .status-completed, .status-accepted {
+.status-paid, .status-completed {
     background: rgba(16, 185, 129, 0.15);
     color: #34d399;
     border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.status-accepted {
+    background: rgba(0, 240, 255, 0.15);
+    color: #00f0ff;
+    border: 1px solid rgba(0, 240, 255, 0.25);
 }
 .status-rejected, .status-failed {
     background: rgba(239, 68, 68, 0.15);

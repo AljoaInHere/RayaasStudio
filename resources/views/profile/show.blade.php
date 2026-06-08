@@ -95,7 +95,7 @@
             <a href="{{ route('profile.edit') }}">
                 <button class="btn btn-primary">Edit Profil</button>
             </a>
-            <a href="{{ Auth::user()->role == 'mitra' ? route('dashboard.mitra') : route('dashboard.customer') }}">
+            <a href="{{ strtolower(trim(Auth::user()->role)) == 'mitra' ? route('dashboard.mitra') : route('dashboard.customer') }}">
                 <button class="btn btn-secondary">Kembali</button>
             </a>
         </div>

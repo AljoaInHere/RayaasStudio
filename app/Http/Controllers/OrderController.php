@@ -11,7 +11,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        if (Auth::user()->role == 'mitra') {
+        if (strtolower(trim(Auth::user()->role)) == 'mitra') {
             $orders = Order::with(['user', 'product'])->get();
         } else {
             $orders = Order::with(['user', 'product'])
@@ -37,7 +37,7 @@ class OrderController extends Controller
             'harga' => $product->price,
             'nama' => $request->nama,
             'metode' => $request->metode,
-            'status' => 'pending',
+            'status' => 'completed',
         ]);
 
         return redirect()->route('orders.index')->with('success', 'Order berhasil dibuat!');

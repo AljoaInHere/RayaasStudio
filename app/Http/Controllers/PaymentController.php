@@ -31,7 +31,7 @@ class PaymentController extends Controller
             'product_id' => $product->id,
             'nama' => $request->nama,
             'metode' => $request->metode,
-            'status' => 'paid',
+            'status' => 'completed',
             'harga' => $product->price,
         ]);
 
@@ -61,7 +61,7 @@ class PaymentController extends Controller
             'harga' => $package->price,
             'nama' => $request->nama,
             'metode' => $request->metode,
-            'status' => 'paid',
+            'status' => 'pending',
         ]);
 
         return redirect()->route('dashboard.customer')->with('success', 'Pembayaran berhasil!');
@@ -107,7 +107,7 @@ class PaymentController extends Controller
                 'product_id' => $product->id,
                 'nama' => $nama,
                 'metode' => 'qris',
-                'status' => 'paid',
+                'status' => 'completed',
                 'harga' => $product->price,
             ]);
         } elseif ($type === 'setup') {
@@ -119,7 +119,7 @@ class PaymentController extends Controller
                 'harga' => $package->price,
                 'nama' => $nama,
                 'metode' => 'qris',
-                'status' => 'paid',
+                'status' => 'pending',
             ]);
         }
 

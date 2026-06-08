@@ -57,6 +57,7 @@
 
         /* Tabs Menu */
         .tabs-container {
+            position: relative;
             display: flex;
             gap: 15px;
             margin-bottom: 30px;
@@ -241,12 +242,72 @@
                 width: 100%;
             }
         }
+
+        /* Stylesheet Cetak Laporan Profesional */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #111827 !important;
+                background-color: #ffffff !important;
+            }
+            .navbar,
+            .tabs-container,
+            .tab-header button,
+            .btn-print,
+            .table-actions,
+            .pagination-container,
+            .footer,
+            .modal,
+            td:last-child,
+            th:last-child {
+                display: none !important;
+            }
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .glass-card {
+                background: #ffffff !important;
+                border: 1px solid #e5e7eb !important;
+                box-shadow: none !important;
+                color: #111827 !important;
+            }
+            .stat-card h3 {
+                color: #9d4edd !important;
+                text-shadow: none !important;
+            }
+            .table-wrapper {
+                border: 1px solid #e5e7eb !important;
+                background: #ffffff !important;
+                box-shadow: none !important;
+            }
+            table th {
+                background: #f3f4f6 !important;
+                color: #111827 !important;
+                border-bottom: 1px solid #e5e7eb !important;
+            }
+            table td {
+                color: #374151 !important;
+                border-bottom: 1px solid #e5e7eb !important;
+            }
+            .status-badge {
+                border: 1px solid #ccc !important;
+                color: #111827 !important;
+                background: #f3f4f6 !important;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr 1fr !important;
+                page-break-inside: avoid;
+            }
+        }
     </style>
 @endsection
 
 @section('content')
     <!-- HEADER -->
-    <div class="dashboard-header glass-card">
+    <div class="dashboard-header glass-card" style="margin-bottom: 20px;">
         <h1>🎬 Dashboard Mitra Raya Studio</h1>
         <p>Kelola produk, jasa setup, dan pesanan Anda di sini</p>
     </div>
@@ -255,20 +316,62 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 my-[30px] mb-[40px] stats-container">
         <div class="py-[25px] px-5 text-center flex flex-col items-center justify-center glass-card stat-card">
             <p class="text-[13px] uppercase tracking-[1px] text-text-secondary font-medium mb-1">Total Pesanan</p>
-            <h3 class="text-[32px] font-bold text-primary-premium font-heading mt-2">{{ $orders->count() }}</h3>
+            <h3 class="text-[32px] font-bold text-primary-premium font-heading mt-2">{{ $totalOrdersCount }}</h3>
         </div>
         <div class="py-[25px] px-5 text-center flex flex-col items-center justify-center glass-card stat-card">
             <p class="text-[13px] uppercase tracking-[1px] text-text-secondary font-medium mb-1">Pesanan Selesai</p>
-            <h3 class="text-[32px] font-bold text-primary-premium font-heading mt-2">{{ $orders->where('status', 'completed')->count() }}</h3>
+            <h3 class="text-[32px] font-bold text-primary-premium font-heading mt-2">{{ $completedOrdersCount }}</h3>
         </div>
         <div class="py-[25px] px-5 text-center flex flex-col items-center justify-center glass-card stat-card">
             <p class="text-[13px] uppercase tracking-[1px] text-text-secondary font-medium mb-1">Total Pendapatan</p>
-            <h3 class="text-[32px] font-bold text-primary-premium font-heading mt-2">Rp {{ number_format($orders->where('status', 'completed')->sum('harga'), 0, ',', '.') }}</h3>
+            <h3 class="text-[32px] font-bold text-primary-premium font-heading mt-2">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
+        </div>
+    </div>
+
+    <!-- ANALYTICS CHARTS -->
+    <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px; margin-bottom: 40px;">
+        <div class="glass-card" style="padding: 25px; display: flex; flex-direction: column; height: 350px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h4 style="font-size: 16px; font-weight: 600; color: var(--text-primary); font-family: var(--font-heading); margin: 0;">
+                    📈 Tren Pendapatan
+                </h4>
+                <select id="revenuePeriod" onchange="updateRevenueChartPeriod(this.value)" style="width: auto; padding: 6px 12px; font-size: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; outline: none; transition: var(--transition-smooth); font-family: var(--font-body); font-weight: 600;">
+                    <option value="6">6 Bulan Terakhir</option>
+                    <option value="5">5 Bulan Terakhir</option>
+                    <option value="4">4 Bulan Terakhir</option>
+                    <option value="3">3 Bulan Terakhir</option>
+                    <option value="2">2 Bulan Terakhir</option>
+                    <option value="1">Bulan Ini</option>
+                </select>
+            </div>
+            <div style="position: relative; flex-grow: 1; min-height: 0;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="glass-card" style="padding: 25px; display: flex; flex-direction: column; height: 350px;">
+            <h4 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 20px; font-family: var(--font-heading);">
+                📊 Kategori Produk & Jasa Terlaris
+            </h4>
+            <div style="position: relative; flex-grow: 1; min-height: 0; display: flex; justify-content: center; align-items: center;">
+                <canvas id="categoryChart"></canvas>
+            </div>
         </div>
     </div>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <strong style="display: block; margin-bottom: 5px;">⚠️ Terjadi kesalahan:</strong>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     <!-- TABS MENU -->
@@ -280,8 +383,11 @@
     <!-- TAB: ORDERS -->
     <div id="orders-tab" class="tab-content animate-fade-up">
         <div class="table-wrapper">
-            <div class="tab-header" style="padding: 20px 24px 0 24px; margin-bottom: 0;">
+            <div class="tab-header" style="padding: 20px 24px 20px 24px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
                 <h2>Daftar Order Masuk</h2>
+                <button class="btn btn-secondary btn-print" onclick="window.print()" style="padding: 8px 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;">
+                    🖨️ Cetak Laporan
+                </button>
             </div>
             @if($orders->count() > 0)
                 <table>
@@ -289,8 +395,7 @@
                         <tr>
                             <th>Order ID</th>
                             <th>Pelanggan</th>
-                            <th>Platform</th>
-                            <th>Keluhan</th>
+                            <th>Jenis Pesanan</th>
                             <th>Tanggal</th>
                             <th>Status</th>
                             <th>Action</th>
@@ -302,34 +407,53 @@
                                 <td>#{{ $order->id }}</td>
                                 <td style="font-weight: 600;">{{ $order->user->username ?? 'Unknown' }}</td>
                                 <td>
-                                    <span class="status-badge" style="background: rgba(0, 240, 255, 0.1); color: var(--accent-cyan); border: 1px solid rgba(0, 240, 255, 0.25);">
-                                        {{ $order->platform ?? 'N/A' }}
-                                    </span>
+                                    @if($order->setup_package_id)
+                                        <span class="status-badge" style="background: rgba(157, 78, 221, 0.15); color: #c77dff; border: 1px solid rgba(157, 78, 221, 0.3);">Setup</span>
+                                    @elseif($order->product)
+                                        @if($order->product->category == 'course')
+                                            <span class="status-badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">Course</span>
+                                        @elseif($order->product->category == 'digital')
+                                            <span class="status-badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);">Digital Product</span>
+                                        @else
+                                            <span class="status-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-secondary); border: 1px solid var(--border-color);">{{ ucfirst($order->product->category) }}</span>
+                                        @endif
+                                    @else
+                                        <span class="status-badge" style="background: rgba(157, 78, 221, 0.15); color: #c77dff; border: 1px solid rgba(157, 78, 221, 0.3);">Setup</span>
+                                    @endif
                                 </td>
-                                <td style="color: var(--text-secondary);">{{ Str::limit($order->keluhan, 40) ?? 'Tidak ada keluhan.' }}</td>
                                 <td>{{ $order->created_at->format('d M Y') }}</td>
                                 <td>
                                     <span class="status-badge status-{{ $order->status }}">
-                                        {{ ucfirst($order->status) }}
+                                        @if($order->status == 'pending')
+                                            Perlu Diproses
+                                        @elseif($order->status == 'accepted')
+                                            Sedang Dikerjakan
+                                        @elseif($order->status == 'completed')
+                                            Selesai
+                                        @elseif($order->status == 'rejected')
+                                            Ditolak
+                                        @else
+                                            {{ ucfirst($order->status) }}
+                                        @endif
                                     </span>
                                 </td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-secondary" onclick="openOrderDetailModal({{ json_encode($order) }})">Detail</button>
+                                        <button class="btn btn-secondary" onclick="openOrderDetailModal(this)" data-order="{{ json_encode($order) }}">Detail</button>
                                         
                                         @if($order->status == 'pending')
                                             <form action="{{ route('admin.orders.accept', $order->id) }}" method="POST" style="display:inline;">
                                                 @csrf
-                                                <button type="submit" class="btn btn-primary" style="background: #10b981;">Accept</button>
+                                                <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #10b981;">Terima & Kerjakan</button>
                                             </form>
                                             <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST" style="display:inline;">
                                                 @csrf
-                                                <button type="submit" class="btn btn-danger">Reject</button>
+                                                <button type="submit" class="btn btn-danger">Tolak</button>
                                             </form>
                                         @elseif($order->status == 'accepted')
                                             <form action="{{ route('admin.orders.complete', $order->id) }}" method="POST" style="display:inline;">
                                                 @csrf
-                                                <button type="submit" class="btn btn-primary">Complete</button>
+                                                <button type="submit" class="btn btn-primary" style="background: var(--primary); border-color: var(--primary);">Tandai Selesai</button>
                                             </form>
                                         @endif
                                     </div>
@@ -387,7 +511,7 @@
                         </div>
 
                         <div class="service-actions">
-                            <button class="btn btn-secondary" onclick="openEditServiceModal({{ json_encode($service) }})">Edit</button>
+                            <button class="btn btn-secondary" onclick="openEditServiceModal(this)" data-service="{{ json_encode($service) }}">Edit</button>
                             <form action="{{ route('admin.setup-services.destroy', $service->id) }}" method="POST" style="display:inline; flex: 1;">
                                 @csrf
                                 @method('DELETE')
@@ -519,7 +643,7 @@
                     <span class="detail-label">Harga</span>
                     <span class="detail-value" id="detailPrice" style="color: var(--primary); font-weight: 700;"></span>
                 </div>
-                <div class="detail-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <div class="detail-row" id="detailComplaintRow" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                     <span class="detail-label">Keluhan / Catatan Khusus</span>
                     <div class="detail-value" id="detailComplaint" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; width: 100%; white-space: pre-wrap; line-height: 1.5; font-size: 13px; color: var(--text-secondary);"></div>
                 </div>
@@ -529,6 +653,7 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function switchTab(tabId, btnId) {
     document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
@@ -554,7 +679,8 @@ function openAddServiceModal() {
     document.getElementById('serviceModal').style.display = 'flex';
 }
 
-function openEditServiceModal(service) {
+function openEditServiceModal(element) {
+    var service = JSON.parse(element.getAttribute('data-service'));
     document.getElementById('modalTitle').innerText = 'Edit Jasa Setup';
     document.getElementById('serviceForm').action = "/admin/setup-services/" + service.id;
     document.getElementById('serviceMethod').value = 'PUT';
@@ -585,20 +711,38 @@ function closeServiceModal() {
     document.getElementById('serviceModal').style.display = 'none';
 }
 
-function openOrderDetailModal(order) {
+function openOrderDetailModal(element) {
+    var order = JSON.parse(element.getAttribute('data-order'));
     document.getElementById('detailId').innerText = '#' + order.id;
     document.getElementById('detailCustomer').innerText = order.user ? order.user.username : 'Unknown';
     document.getElementById('detailProduct').innerText = order.product ? order.product.name : (order.paket || 'Unknown Product');
     document.getElementById('detailPlatform').innerText = order.platform || 'N/A';
     
-    // Format Date
+    // Format Date & Time Lengkap (Hari, Bulan, Tahun, Jam:Menit:Detik)
     var rawDate = new Date(order.created_at);
-    var options = { day: 'numeric', month: 'short', year: 'numeric' };
-    document.getElementById('detailDate').innerText = rawDate.toLocaleDateString('id-ID', options);
+    var options = { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    document.getElementById('detailDate').innerText = rawDate.toLocaleDateString('id-ID', options) + ' WIB';
     
     document.getElementById('detailMethod').innerText = (order.metode || 'N/A').toUpperCase();
     document.getElementById('detailPrice').innerText = 'Rp ' + Number(order.harga).toLocaleString('id-ID');
-    document.getElementById('detailComplaint').innerText = order.keluhan || 'Tidak ada keluhan khusus.';
+    
+    // Sembunyikan keluhan jika pesanan adalah Digital Product atau Course (product_id terisi)
+    var complaintRow = document.getElementById('detailComplaintRow');
+    if (order.product_id) {
+        complaintRow.style.display = 'none';
+    } else {
+        complaintRow.style.display = 'flex';
+        document.getElementById('detailComplaint').innerText = order.keluhan || 'Tidak ada keluhan khusus.';
+    }
+    
     document.getElementById('orderDetailModal').style.display = 'flex';
 }
 
@@ -630,6 +774,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function initSlidingPill(containerSelector, itemSelector) {
         const containers = document.querySelectorAll(containerSelector);
         containers.forEach(container => {
+            const computedStyle = window.getComputedStyle(container);
+            if (computedStyle.position === 'static') {
+                container.style.position = 'relative';
+            }
+
             let pill = container.querySelector('.sliding-pill-indicator');
             if (!pill) {
                 pill = document.createElement('div');
@@ -662,6 +811,190 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     initSlidingPill('.tabs-container', '.tab-btn');
+});
+
+// Global Chart instances & data for Period Filtering
+let revenueChart;
+const allMonths = {!! json_encode($chartMonths) !!};
+const allRevenue = {!! json_encode($chartRevenue) !!};
+
+function updateRevenueChartPeriod(months) {
+    if (!revenueChart) return;
+    const limit = parseInt(months);
+    const slicedMonths = allMonths.slice(-limit);
+    const slicedRevenue = allRevenue.slice(-limit);
+    
+    revenueChart.data.labels = slicedMonths;
+    revenueChart.data.datasets[0].data = slicedRevenue;
+    
+    // Re-create gradient background relative to new dataset width/height
+    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+    const revenueGradient = ctxRevenue.createLinearGradient(0, 0, 0, 250);
+    revenueGradient.addColorStop(0, 'rgba(157, 78, 221, 0.4)');
+    revenueGradient.addColorStop(1, 'rgba(157, 78, 221, 0)');
+    revenueChart.data.datasets[0].backgroundColor = revenueGradient;
+
+    revenueChart.update();
+}
+
+// Chart.js Analytics Initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Line Chart: Tren Pendapatan
+    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+    
+    // Create gradient for Line Chart fill
+    const revenueGradient = ctxRevenue.createLinearGradient(0, 0, 0, 250);
+    revenueGradient.addColorStop(0, 'rgba(157, 78, 221, 0.4)');
+    revenueGradient.addColorStop(1, 'rgba(157, 78, 221, 0)');
+
+    revenueChart = new Chart(ctxRevenue, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($chartMonths) !!},
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: {!! json_encode($chartRevenue) !!},
+                borderColor: '#9d4edd',
+                borderWidth: 3,
+                backgroundColor: revenueGradient,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#00f0ff',
+                pointBorderColor: '#9d4edd',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#00f0ff',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(18, 18, 37, 0.9)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#f3f4f6',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Pendapatan: Rp ' + context.raw.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                        borderColor: 'transparent'
+                    },
+                    ticks: {
+                        color: '#9ca3af',
+                        font: {
+                            family: 'Inter',
+                            size: 11
+                        }
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                        borderColor: 'transparent'
+                    },
+                    ticks: {
+                        color: '#9ca3af',
+                        font: {
+                            family: 'Inter',
+                            size: 11
+                        },
+                        callback: function(value) {
+                            if (value >= 1000000) {
+                                return 'Rp ' + (value / 1000000) + 'jt';
+                            }
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Doughnut Chart: Kategori Produk & Jasa Terlaris
+    const ctxCategory = document.getElementById('categoryChart').getContext('2d');
+    
+    const categories = {!! json_encode($chartCategories) !!};
+    const sales = {!! json_encode($chartSales) !!};
+
+    if (categories.length === 0) {
+        // Show placeholder message if no data exists
+        const container = ctxCategory.canvas.parentNode;
+        container.innerHTML = `<div style="color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px;">📭 Belum ada data transaksi kategori</div>`;
+    } else {
+        new Chart(ctxCategory, {
+            type: 'doughnut',
+            data: {
+                labels: categories,
+                datasets: [{
+                    data: sales,
+                    backgroundColor: [
+                        '#00f0ff', // Cyan
+                        '#9d4edd', // Violet
+                        '#ff007f', // Accent Pink
+                        '#9b70db', // Light Purple
+                        '#34d399', // Mint Green
+                        '#f59e0b', // Amber/Orange
+                        '#3b82f6'  // Blue
+                    ],
+                    borderColor: 'rgba(18, 18, 37, 0.8)',
+                    borderWidth: 2,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#9ca3af',
+                            font: {
+                                family: 'Inter',
+                                size: 12,
+                                weight: '500'
+                            },
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(18, 18, 37, 0.9)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#f3f4f6',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw} Pesanan`;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+    }
 });
 </script>
 @endsection

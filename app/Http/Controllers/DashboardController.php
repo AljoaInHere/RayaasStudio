@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\SetupPackage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -109,14 +111,94 @@ class DashboardController extends Controller
         $user = Auth::user();
         
         // Get all orders for Mitra dashboard
-        $orders = Order::with(['user', 'product'])->orderBy('id', 'desc')->paginate(5, ['*'], 'orders_page');
+        $orders = Order::with(['user', 'product', 'setupPackage'])->orderBy('id', 'desc')->paginate(5, ['*'], 'orders_page');
 
         // Get setup services created by this Mitra
         $services = SetupPackage::where('user_id', $user->id)->orderBy('id', 'desc')->paginate(5, ['*'], 'services_page');
 
+        // Global statistics (across all pagination pages)
+        $totalOrdersCount = Order::count();
+        $completedOrdersCount = Order::where(function($q) {
+            $q->where('status', 'completed')
+              ->orWhere(function($sub) {
+                  $sub->whereNotNull('product_id')
+                      ->where('status', 'paid');
+              });
+        })->count();
+
+        $totalRevenue = Order::where(function($q) {
+            $q->where('status', 'completed')
+              ->orWhere(function($sub) {
+                  $sub->whereNotNull('product_id')
+                      ->where('status', 'paid');
+              });
+        })->sum('harga');
+
+        // Query tren pendapatan 6 bulan terakhir (completed orders & paid product orders)
+        $sixMonthsAgo = Carbon::now()->subMonths(5)->startOfMonth();
+        $revenueData = Order::select(
+                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                DB::raw('SUM(harga) as total')
+            )
+            ->where(function($q) {
+                $q->where('status', 'completed')
+                  ->orWhere(function($sub) {
+                      $sub->whereNotNull('product_id')
+                          ->where('status', 'paid');
+                  });
+            })
+            ->where('created_at', '>=', $sixMonthsAgo)
+            ->groupBy('month')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->pluck('total', 'month')
+            ->toArray();
+
+        $chartMonths = [];
+        $chartRevenue = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $monthObj = Carbon::now()->subMonths($i);
+            $monthKey = $monthObj->format('Y-m');
+            $chartMonths[] = $monthObj->translatedFormat('F Y');
+            $chartRevenue[] = (float)($revenueData[$monthKey] ?? 0);
+        }
+
+        // Query kategori terlaris (gabungan produk digital/course & jasa setup)
+        $allPaidOrders = Order::with(['product', 'setupPackage'])
+            ->whereIn('status', ['paid', 'pending', 'accepted', 'completed'])
+            ->get();
+
+        $categoryCounts = [];
+        foreach ($allPaidOrders as $order) {
+            $categoryName = null;
+            if ($order->setupPackage) {
+                $categoryName = $order->setupPackage->category;
+            } elseif ($order->product) {
+                $categoryName = $order->product->category == 'course' ? 'Course' : ($order->product->category == 'digital' ? 'Digital Product' : ucfirst($order->product->category));
+            }
+            
+            if ($categoryName) {
+                if (!isset($categoryCounts[$categoryName])) {
+                    $categoryCounts[$categoryName] = 0;
+                }
+                $categoryCounts[$categoryName]++;
+            }
+        }
+        
+        arsort($categoryCounts);
+        $chartCategories = array_keys($categoryCounts);
+        $chartSales = array_values($categoryCounts);
+
         return view('dashboard.mitra', [
             'orders' => $orders,
-            'services' => $services
+            'services' => $services,
+            'totalOrdersCount' => $totalOrdersCount,
+            'completedOrdersCount' => $completedOrdersCount,
+            'totalRevenue' => $totalRevenue,
+            'chartMonths' => $chartMonths,
+            'chartRevenue' => $chartRevenue,
+            'chartCategories' => $chartCategories,
+            'chartSales' => $chartSales
         ]);
     }
 

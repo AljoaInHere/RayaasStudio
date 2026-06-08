@@ -87,7 +87,7 @@
             @auth
                 <a href="/products">Produk</a>
                 <a href="/orders">Pesanan Saya</a>
-                @if(Auth::user()->role == 'mitra')
+                @if(strtolower(trim(Auth::user()->role)) == 'mitra')
                     <a href="/admin/products">Admin</a>
                 @endif
                 <a href="#" onclick="triggerLogout(); return false;">Logout ({{ Auth::user()->username }})</a>
