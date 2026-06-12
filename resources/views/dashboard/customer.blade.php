@@ -236,22 +236,74 @@
     @if($products->count() > 0)
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[30px] product-grid">
             @foreach($products as $product)
-                <div class="flex flex-col h-full p-5 glass-card product-card group">
-                    <div class="w-full h-[180px] rounded-lg overflow-hidden mb-5 border border-white/5 product-image-wrapper">
-                        @if($product->image)
-                            <img src="/storage/{{ $product->image }}" alt="{{ $product->name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]">
-                        @else
-                            <img src="https://via.placeholder.com/250x160?text={{ $product->is_setup ? 'Setup' : 'Product' }}" alt="Default" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]">
-                        @endif
+                @if($product->is_setup)
+                    <div class="flex flex-col h-full p-5 glass-card product-card group">
+                        <!-- Top Banner with Avatar Overlay -->
+                        <div class="w-full h-[140px] rounded-lg bg-gradient-to-br from-purple-900/30 to-indigo-950/40 border border-white/5 relative flex items-center justify-center mb-4 overflow-hidden">
+                            <!-- Background decorative glow -->
+                            <div class="absolute -right-10 -top-10 w-24 h-24 bg-primary-premium/20 rounded-full blur-xl"></div>
+                            <div class="absolute -left-10 -bottom-10 w-24 h-24 bg-accent-cyan/15 rounded-full blur-xl"></div>
+                            
+                            <!-- Floating Avatar -->
+                            <div class="relative w-20 h-20 z-10">
+                                <div class="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-white/15 to-white/5 border-2 border-primary-premium/50 flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-105">
+                                    @if($product->profile_photo)
+                                        <img src="/storage/{{ $product->profile_photo }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                                    @else
+                                        <span class="text-3xl">👨‍🔧</span>
+                                    @endif
+                                </div>
+                                <span class="absolute bottom-0 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#121225] rounded-full"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Nama & Deskripsi -->
+                        <h3 class="text-xl mb-1 font-heading font-semibold text-text-primary text-center">{{ $product->name }}</h3>
+                        
+                        <!-- Badge Jasa -->
+                        <div class="flex justify-center mb-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-primary-soft text-[#d8b4fe] border border-primary-soft/30">
+                                Mitra Teknisi
+                            </span>
+                        </div>
+                        
+                        <!-- Bio -->
+                        <p class="text-xs text-text-secondary text-center line-clamp-2 mb-4 px-2 min-h-[32px]">
+                            {{ $product->bio ?: 'Spesialis setup live streaming, audio mixing, dan optimalisasi workspace.' }}
+                        </p>
+                        
+                        <!-- Rentang Harga -->
+                        <div class="mt-auto mb-4 text-center pt-3 border-t border-white/5">
+                            <span class="text-[10px] text-text-muted uppercase tracking-wider block">Mulai Dari</span>
+                            <div class="text-base font-extrabold text-primary-premium font-heading">
+                                Rp {{ number_format($product->min_price, 0, ',', '.') }} - {{ number_format($product->max_price, 0, ',', '.') }}
+                            </div>
+                        </div>
+                        
+                        <!-- Tombol Aksi -->
+                        <a href="{{ route('teknisi.show', $product->id) }}" class="btn btn-primary mt-auto! w-full! relative! bottom-auto! left-auto! right-auto! rounded-lg! py-3! px-5! inline-flex! justify-center! items-center! gap-1.5 transition-all">
+                            <span>Lihat Paket Jasa</span>
+                            <span class="group-hover:translate-x-0.5 transition-transform">→</span>
+                        </a>
                     </div>
-                    
-                    <h3 class="text-xl mb-2 flex items-center gap-2 font-heading font-semibold text-text-primary">{{ $product->icon ?? '' }} {{ $product->name }}</h3>
-                    <div class="text-lg font-bold text-primary-premium my-3 font-heading product-price">
-                        <span class="price-premium">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                @else
+                    <div class="flex flex-col h-full p-5 glass-card product-card group">
+                        <div class="w-full h-[180px] rounded-lg overflow-hidden mb-5 border border-white/5 product-image-wrapper">
+                            @if($product->image)
+                                <img src="/storage/{{ $product->image }}" alt="{{ $product->name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]">
+                            @else
+                                <img src="https://via.placeholder.com/250x160?text={{ $product->is_setup ? 'Setup' : 'Product' }}" alt="Default" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]">
+                            @endif
+                        </div>
+                        
+                        <h3 class="text-xl mb-2 flex items-center gap-2 font-heading font-semibold text-text-primary">{{ $product->icon ?? '' }} {{ $product->name }}</h3>
+                        <div class="text-lg font-bold text-primary-premium my-3 font-heading product-price">
+                            <span class="price-premium">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                        </div>
+                        
+                        <a href="{{ $product->is_setup ? route('payment.setup', $product->id) : route('payment.product', $product->id) }}" class="btn btn-primary mt-auto! w-full! relative! bottom-auto! left-auto! right-auto! rounded-lg! py-3! px-5! inline-flex! justify-center! items-center!">Beli</a>
                     </div>
-                    
-                    <a href="{{ $product->is_setup ? route('payment.setup', $product->id) : route('payment.product', $product->id) }}" class="btn btn-primary mt-auto! w-full! relative! bottom-auto! left-auto! right-auto! rounded-lg! py-3! px-5! inline-flex! justify-center! items-center!">Beli</a>
-                </div>
+                @endif
             @endforeach
         </div>
 

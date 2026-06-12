@@ -50,4 +50,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function setupPackages()
+    {
+        return $this->hasMany(SetupPackage::class);
+    }
 }

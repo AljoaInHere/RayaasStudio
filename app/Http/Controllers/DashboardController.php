@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\SetupPackage;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -25,18 +26,36 @@ class DashboardController extends Controller
         $items = collect();
 
         if ($category === 'setup') {
-            $setupQuery = SetupPackage::where('status', 'Active');
+            $teknisiQuery = User::where('role', 'mitra')
+                ->whereHas('setupPackages', function ($q) {
+                    $q->where('status', 'Active');
+                })
+                ->with(['setupPackages' => function ($q) {
+                    $q->where('status', 'Active');
+                }]);
+
             if ($search) {
-                $setupQuery->where(function ($q) use ($search) {
+                $teknisiQuery->where(function ($q) use ($search) {
                     $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('description', 'like', '%' . $search . '%');
+                      ->orWhere('username', 'like', '%' . $search . '%');
                 });
             }
-            $setupList = $setupQuery->orderBy('id', 'desc')->get();
-            $items = $setupList->map(function ($setup) {
-                $setup->is_setup = true;
-                $setup->icon = '🛠️';
-                return $setup;
+
+            $teknisiList = $teknisiQuery->orderBy('id', 'desc')->get();
+
+            $items = $teknisiList->map(function ($teknisi) {
+                return (object) [
+                    'id' => $teknisi->id,
+                    'name' => $teknisi->username,
+                    'description' => 'Teknisi Ahli Setup',
+                    'is_setup' => true,
+                    'icon' => '👨🔧',
+                    'min_price' => $teknisi->setupPackages->min('price'),
+                    'max_price' => $teknisi->setupPackages->max('price'),
+                    'created_at' => $teknisi->created_at,
+                    'profile_photo' => $teknisi->profile_photo,
+                    'bio' => $teknisi->bio,
+                ];
             });
         } elseif ($category === 'course' || $category === 'digital') {
             $prodQuery = Product::where('category', $category);
@@ -49,6 +68,8 @@ class DashboardController extends Controller
             $productsList = $prodQuery->orderBy('id', 'desc')->get();
             $items = $productsList->map(function ($product) {
                 $product->is_setup = false;
+                $product->min_price = null;
+                $product->max_price = null;
                 return $product;
             });
         } else {
@@ -62,23 +83,42 @@ class DashboardController extends Controller
             }
             $productsList = $prodQuery->orderBy('id', 'desc')->get();
 
-            $setupQuery = SetupPackage::where('status', 'Active');
+            $teknisiQuery = User::where('role', 'mitra')
+                ->whereHas('setupPackages', function ($q) {
+                    $q->where('status', 'Active');
+                })
+                ->with(['setupPackages' => function ($q) {
+                    $q->where('status', 'Active');
+                }]);
+
             if ($search) {
-                $setupQuery->where(function ($q) use ($search) {
+                $teknisiQuery->where(function ($q) use ($search) {
                     $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('description', 'like', '%' . $search . '%');
+                      ->orWhere('username', 'like', '%' . $search . '%');
                 });
             }
-            $setupList = $setupQuery->orderBy('id', 'desc')->get();
 
-            $setupItems = $setupList->map(function ($setup) {
-                $setup->is_setup = true;
-                $setup->icon = '🛠️';
-                return $setup;
+            $teknisiList = $teknisiQuery->orderBy('id', 'desc')->get();
+
+            $setupItems = $teknisiList->map(function ($teknisi) {
+                return (object) [
+                    'id' => $teknisi->id,
+                    'name' => $teknisi->username,
+                    'description' => 'Teknisi Ahli Setup',
+                    'is_setup' => true,
+                    'icon' => '👨🔧',
+                    'min_price' => $teknisi->setupPackages->min('price'),
+                    'max_price' => $teknisi->setupPackages->max('price'),
+                    'created_at' => $teknisi->created_at,
+                    'profile_photo' => $teknisi->profile_photo,
+                    'bio' => $teknisi->bio,
+                ];
             });
 
             $productItems = $productsList->map(function ($product) {
                 $product->is_setup = false;
+                $product->min_price = null;
+                $product->max_price = null;
                 return $product;
             });
 

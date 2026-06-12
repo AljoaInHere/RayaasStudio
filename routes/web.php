@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
 // Setup Packages routes (Public)
 Route::get('/setup', [SetupPackageController::class, 'index'])->name('setup.index');
 Route::get('/setup/{id}', [SetupPackageController::class, 'show'])->name('setup.show');
+Route::get('/teknisi/{id}', [SetupPackageController::class, 'showTeknisi'])->name('teknisi.show');
 
 // Course routes (Public)
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');

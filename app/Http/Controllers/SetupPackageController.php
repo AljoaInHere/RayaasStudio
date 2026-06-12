@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SetupPackage;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class SetupPackageController extends Controller
@@ -23,5 +24,16 @@ class SetupPackageController extends Controller
     {
         $package = SetupPackage::findOrFail($id);
         return view('setup.payment', compact('package'));
+    }
+
+    public function showTeknisi($id)
+    {
+        $teknisi = User::where('role', 'mitra')
+            ->with(['setupPackages' => function ($q) {
+                $q->where('status', 'Active');
+            }])
+            ->findOrFail($id);
+
+        return view('setup.teknisi_detail', compact('teknisi'));
     }
 }
