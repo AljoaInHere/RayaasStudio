@@ -31,7 +31,7 @@ class SetupPackageController extends Controller
         $teknisi = User::where('role', 'mitra')
             ->with(['setupPackages' => function ($q) {
                 $q->where('status', 'Active');
-            }])
+            }, 'portfolios'])
             ->findOrFail($id);
 
         return view('setup.teknisi_detail', compact('teknisi'));

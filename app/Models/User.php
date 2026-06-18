@@ -55,4 +55,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(SetupPackage::class);
     }
+
+    /**
+     * Get the portfolios associated with the user.
+     */
+    public function portfolios()
+    {
+        return $this->hasMany(Portfolio::class);
+    }
 }
